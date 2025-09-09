@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MU H7 - Offline (Anime RPG)</title>
+<style>
+:root{--bg:#121226;--panel:#1f1f36;--accent:#ff6b81}
+body{margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:#fff;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+header{padding:18px;text-align:center}
+#game{position:relative;width:900px;height:520px;margin:12px auto;background:#0b0b16;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+#bg{position:absolute;inset:0;background:url('assets/backgrounds/field.png') center/cover no-repeat;filter:contrast(1.05) brightness(0.9)}
+.stage{position:absolute;inset:0;pointer-events:none}
+.hero,.monster{position:absolute;width:128px;height:128px;bottom:50px;transition:transform .25s ease}
+.hero{left:60px}
+.monster{right:80px}
+.ui{width:900px;display:flex;justify-content:space-between;align-items:center;padding:10px 0}
+.panel{background:var(--panel);padding:10px;border-radius:8px;min-width:260px}
+.buttons button{padding:8px 12px;margin:6px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+.small{font-size:13px;color:#ddd}
+.center{display:flex;gap:8px;align-items:center}
+.hidden{display:none}
+.badge{background:#222;padding:6px 8px;border-radius:6px;font-weight:600}
+.progress{height:10px;background:#111;border-radius:6px;overflow:hidden;margin-top:8px}
+.bar{height:100%;background:linear-gradient(90deg,#ff6b81,#ff9a9e);width:100%}
+footer{margin-top:12px;color:#bbb;font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>MU H7 - Offline (Anime)</h1><div class="small">Versión offline. Abre index.html en tu navegador para jugar.</div></header>
+
+<div id="game">
+  <div id="bg"></div>
+  <div class="stage">
+    <img id="hero" class="hero" src="assets/heroes/hero1_skin1.png" alt="Hero">
+    <img id="monster" class="monster" src="assets/monsters/monster1.png" alt="Monster">
+  </div>
+</div>
+
+<div class="ui">
+  <div class="panel">
+    <div><strong>Selecciona héroe</strong></div>
+    <div style="margin-top:8px" id="heroSelect">
+      <button onclick="selectHero(0)">Héroe 1</button>
+      <button onclick="selectHero(1)">Héroe 2</button>
+      <button onclick="selectHero(2)">Héroe 3</button>
+    </div>
+    <div class="small" style="margin-top:8px">Cambia skin mientras juegas.</div>
+  </div>
+
+  <div class="panel center">
+    <div style="text-align:left">
+      <div><span class="badge">HP Héroe:</span> <span id="heroHPText">100</span></div>
+      <div class="progress"><div id="heroBar" class="bar" style="width:100%"></div></div>
+      <div style="height:8px"></div>
+      <div><span class="badge">HP Monstruo:</span> <span id="monsterHPText">100</span></div>
+      <div class="progress"><div id="monsterBar" class="bar" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="panel buttons">
+    <div style="margin-bottom:6px"><button onclick="changeSkin()">Cambiar Skin</button> <button onclick="manualAttack()">Atacar ahora</button></div>
+    <div class="small">Idle: los héroes atacan automáticamente cada 2s.</div>
+  </div>
+</div>
+
+<footer>Archivo offline creado para pruebas. Si quieres un ejecutable (Windows/Mac) podemos empaquetarlo después.</footer>
+
+<script>
+// Game data
+const heroes = [
+  ['assets/heroes/hero1_skin1.png','assets/heroes/hero1_skin2.png','assets/heroes/hero1_skin3.png'],
+  ['assets/heroes/hero2_skin1.png','assets/heroes/hero2_skin2.png','assets/heroes/hero2_skin3.png'],
+  ['assets/heroes/hero3_skin1.png','assets/heroes/hero3_skin2.png','assets/heroes/hero3_skin3.png']
+];
+let selectedHero = 0;
+let currentSkin = 0;
+
+let heroHP = 100;
+let monsterHP = 100;
+const maxHP = 100;
+
+const heroImg = document.getElementById('hero');
+const monsterImg = document.getElementById('monster');
+
+function updateUI(){
+  document.getElementById('heroHPText').innerText = heroHP;
+  document.getElementById('monsterHPText').innerText = monsterHP;
+  document.getElementById('heroBar').style.width = (heroHP/maxHP*100)+'%';
+  document.getElementById('monsterBar').style.width = (monsterHP/maxHP*100)+'%';
+}
+
+function selectHero(i){
+  selectedHero = i;
+  currentSkin = 0;
+  heroImg.src = heroes[selectedHero][currentSkin];
+  // reset HP for demo
+  heroHP = maxHP;
+  monsterHP = maxHP;
+  updateUI();
+}
+
+function changeSkin(){
+  currentSkin = (currentSkin + 1) % heroes[selectedHero].length;
+  heroImg.src = heroes[selectedHero][currentSkin];
+}
+
+function manualAttack(){
+  doAttack();
+}
+
+function doAttack(){
+  if(heroHP<=0 || monsterHP<=0) return;
+  // simple damage random
+  const heroDmg = Math.floor(Math.random()*20)+8;
+  const monsterDmg = Math.floor(Math.random()*12)+4;
+  // animate
+  heroImg.style.transform = 'translateX(30px) translateY(-10px) scale(1.02)';
+  monsterImg.style.transform = 'translateX(-30px) translateY(-5px) scale(1.02)';
+  setTimeout(()=>{ heroImg.style.transform=''; monsterImg.style.transform=''; }, 180);
+
+  monsterHP = Math.max(0, monsterHP - heroDmg);
+  heroHP = Math.max(0, heroHP - monsterDmg);
+  updateUI();
+
+  if(monsterHP===0){
+    setTimeout(()=>{ alert('¡Monstruo derrotado! Reaparecerá en 3s'); }, 200);
+    setTimeout(()=>{ monsterHP = maxHP; updateUI(); }, 3000);
+  }
+  if(heroHP===0){
+    setTimeout(()=>{ alert('Tu héroe fue derrotado. Se recuperará al 50% en 4s'); }, 200);
+    setTimeout(()=>{ heroHP = Math.floor(maxHP*0.5); updateUI(); }, 4000);
+  }
+}
+
+// Idle loop
+setInterval(()=>{ doAttack(); }, 2000);
+
+// initialize
+selectHero(0);
+updateUI();
+</script>
+
+</body>
+</html>
